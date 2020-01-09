@@ -59,9 +59,7 @@
             // Generate new bomb
             eTimer -= deltaTime;
             if (eTimer < 0) {
-                var bomb = new Circle(random(2) * canvas.width, random(2) * canvas.height, 10);
-                bomb.timer = 1.5 + random(2.5);
-                bomb.speed = 100 + (random(score)) * 10;
+                var bomb = new Circle(random(2) * canvas.width, random(2) * canvas.height, 10, 1.5 + random(2.5), 100 + (random(score)) * 10);
                 bombs.push(bomb);
                 eTimer = 0.5 + random(2.5);
             }
@@ -91,25 +89,34 @@
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         //print bombs
-        for (var i = 0; i < bombs.length; i++) {
-            ctx.strokeStyle = '#f00';
-            bombs[i].stroke(ctx);
+        for (var i = 0, l = bombs.length; i < l; i++) {
+            if (bombs[i].timer < 0) {
+                ctx.fillStyle = '#fff';
+                bombs[i].fill(ctx);
+            }
+            else {
+                if (bombs[i].timer < 1 && ~~(bombs[i].timer * 10) % 2 == 0)
+                    ctx.strokeStyle = '#fff';
+                else
+                    ctx.strokeStyle = '#f00';
+                bombs[i].stroke(ctx);
+            }
         }
         //print player
         ctx.strokeStyle = '#0f0';
         player.stroke(ctx);
         //print score and distance
         ctx.fillStyle = '#fff';
-        ctx.fillText('Score: ' + score, 0, 20);
+        ctx.fillText('Score: ' + score, 0, 10);
         lastPress = null;
-        if (counter > 0)
-            ctx.fillText('Time: ' + counter.toFixed(1), 250, 10);
-        else
-            ctx.fillText('Time: 0.0', 250, 10);
+
         if (pause) {
-            ctx.fillText('Score: ' + score, 120, 100);
-            if (counter < -1)
-                ctx.fillText('CLICK TO START', 100, 120);
+            ctx.textAlign = 'center';
+            if (gameover)
+                ctx.fillText('GAME OVER', 150, 100);
+            else
+                ctx.fillText('PAUSE', 150, 100);
+            ctx.textAlign = 'left';
         }
     }
 
@@ -124,10 +131,12 @@
     }
 
     class Circle {
-        constructor(x, y, radius) {
-            this.x = (x == null) ? 0 : x;
-            this.y = (y == null) ? 0 : y;
-            this.radius = (radius == null) ? 0 : radius;
+        constructor(x, y, radius, timer, speed) {
+            this.x = (x == undefined) ? 0 : x;
+            this.y = (y == undefined) ? 0 : y;
+            this.radius = (radius === undefined) ? 0 : radius;
+            this.timer = (timer === undefined) ? 0 : timer;
+            this.speed = (speed === undefined) ? 0 : speed;
         }
 
         distance(circle) {
@@ -154,6 +163,12 @@
         getAngle(circle) {
             if (circle != null)
                 return (Math.atan2(circle.y - this.y, circle.x - this.x));
+        }
+
+        fill(ctx) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+            ctx.fill();
         }
     }
 
