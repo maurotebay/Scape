@@ -7,10 +7,12 @@
     var score = 0;
     var bgColor = '#000';
     var player = null;
-    var target = null;
     var lastUpdate = 0;
     var counter = 0;
-    var pause = true;
+    var pause = false;
+    var gameover = false;
+    var bombs = [];
+    var eTimer = 0;
 
 
     function init() {
@@ -19,7 +21,6 @@
         canvas.width = 300;
         canvas.height = 200;
         player = new Circle(0, 0, 5);
-        target = new Circle(100, 100, 10);
         enableInputs();
         run();
     }
@@ -39,55 +40,66 @@
     }
 
     function act(deltaTime) {
-        //move player
-        player.x = mousex;
-        player.y = mousey;
-        //keep player on canvas
-        if (player.x < 0)
-            player.x = 0 + player.radius;
-        if (player.x > canvas.width)
-            player.x = canvas.width - player.radius;
-        if (player.y < 0)
-            player.y = 0 + player.radius;
-        if (player.y > canvas.height)
-            player.y = canvas.height - player.radius;
-
-        counter -= deltaTime;
         if (!pause) {
-            if (lastPress == 1) {
-                bgColor = '#333';
-                if (player.distance(target) < 0) {
+            if (gameover)
+                reset();
+            //move player
+            player.x = mousex;
+            player.y = mousey;
+            //keep player on canvas
+            if (player.x < 0)
+                player.x = 0 + player.radius;
+            if (player.x > canvas.width)
+                player.x = canvas.width - player.radius;
+            if (player.y < 0)
+                player.y = 0 + player.radius;
+            if (player.y > canvas.height)
+                player.y = canvas.height - player.radius;
+
+            // Generate new bomb
+            eTimer -= deltaTime;
+            if (eTimer < 0) {
+                var bomb = new Circle(random(2) * canvas.width, random(2) * canvas.height, 10);
+                bomb.timer = 1.5 + random(2.5);
+                bomb.speed = 100 + (random(score)) * 10;
+                bombs.push(bomb);
+                eTimer = 0.5 + random(2.5);
+            }
+            // Bombs
+            for (var i = 0, l = bombs.length; i < l; i++) {
+                if (bombs[i].timer < 0) {
                     score++;
-                    target.x = random(canvas.width / 10 - 1) * 10 + target.radius;
-                    target.y = random(canvas.height / 10 - 1) * 10 + target.radius;
+                    bombs.splice(i--, 1);
+                    l--;
+                    continue;
+                }
+                bombs[i].timer -= deltaTime;
+                var angle = bombs[i].getAngle(player);
+                bombs[i].move(angle, bombs[i].speed * deltaTime);
+                if (bombs[i].timer < 0) {
+                    bombs[i].radius *= 2;
+                    if (bombs[i].distance(player) < 0) {
+                        gameover = true;
+                        pause = true;
+                    }
                 }
             }
-            else
-                bgColor = '#000';
-            if (counter <= 0) {
-                pause = true;
-            }
         }
-        else if (lastPress == 1 && counter < -1) {
-            pause = false;
-            counter = 15;
-            score = 0;
-        }
-        lastPress = null;
     }
 
     function paint(ctx) {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        //print target
-        ctx.strokeStyle = '#f00';
-        target.stroke(ctx);
+        //print bombs
+        for (var i = 0; i < bombs.length; i++) {
+            ctx.strokeStyle = '#f00';
+            bombs[i].stroke(ctx);
+        }
         //print player
         ctx.strokeStyle = '#0f0';
         player.stroke(ctx);
         //print score and distance
         ctx.fillStyle = '#fff';
-        ctx.fillText('Distance: ' + player.distance(target).toFixed(1), 0, 10);
         ctx.fillText('Score: ' + score, 0, 20);
         lastPress = null;
         if (counter > 0)
@@ -130,6 +142,18 @@
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
             ctx.stroke();
+        }
+
+        move(angle, speed) {
+            if (speed != null) {
+                this.x += Math.cos(angle) * speed;
+                this.y += Math.sin(angle) * speed;
+            }
+        }
+
+        getAngle(circle) {
+            if (circle != null)
+                return (Math.atan2(circle.y - this.y, circle.x - this.x));
         }
     }
 
