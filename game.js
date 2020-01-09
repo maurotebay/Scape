@@ -120,13 +120,20 @@
         }
     }
 
+    function reset() {
+        score = 0;
+        eTimer = 0;
+        bombs.length = 0;
+        gameover = false;
+    }
+
     function enableInputs() {
         document.addEventListener('mousemove', function (evt) {
             mousex = evt.pageX - canvas.offsetLeft;
             mousey = evt.pageY - canvas.offsetTop;
         }, false);
         canvas.addEventListener('mousedown', function (evt) {
-            lastPress = evt.which;
+            pause = !pause;
         }, false);
     }
 
