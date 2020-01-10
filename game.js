@@ -8,7 +8,6 @@
     var bgColor = '#000';
     var player = null;
     var lastUpdate = 0;
-    var counter = 0;
     var pause = false;
     var gameover = false;
     var bombs = [];
